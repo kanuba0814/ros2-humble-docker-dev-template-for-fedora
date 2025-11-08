@@ -1,6 +1,10 @@
+# Tmuxinator Configuration for ROS2 Development
+# This file defines your tmux session layout with multiple windows and panes
+# For beginners: Each "window" is like a tab, and each window can have multiple "panes" (split views)
+
 # Set var "WDIR" to workdir
 <% if @args[0] %>
-<% WDIR=@args[0] %> 
+<% WDIR=@args[0] %>
 <% else %>
 <% WDIR=ENV["PWD"] %>
 <% end %>
@@ -8,13 +12,31 @@
 name: <%= WDIR.split('/').last  %>
 root: <%= @args[0] %>
 
-startup_window: talker
+# Window that opens by default when session starts
+startup_window: workspace
+
 windows:
-  - talker:
+  # Window 1: Main workspace for building and running your code
+  - workspace:
       layout: even-vertical
       panes:
-        - print -S 'ros2 run demo_nodes_cpp talker'
-  - listener:
-      layout: even-vertical
+        - echo "Welcome to ROS2 Humble on Fedora 43!"
+        - echo "Tips: Use 'rosdi' to install deps, 'cbuild' to build, 'ssetup' to source"
+
+  # Window 2: Example talker node (uncomment to enable demo)
+  # - talker:
+  #     layout: even-vertical
+  #     panes:
+  #       - print -S 'ros2 run demo_nodes_cpp talker'
+
+  # Window 3: Example listener node (uncomment to enable demo)
+  # - listener:
+  #     layout: even-vertical
+  #     panes:
+  #       - print -S 'ros2 run demo_nodes_cpp listener'
+
+  # Window 4: Monitoring - useful for checking system resources
+  - monitoring:
+      layout: even-horizontal
       panes:
-        - print -S 'ros2 run demo_nodes_cpp listener'
+        - echo "Use 'htop' to monitor CPU/RAM or 'ros2 topic list' to see active topics"

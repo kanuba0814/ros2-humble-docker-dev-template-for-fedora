@@ -3,12 +3,14 @@
 help()
 {
     echo ""
-    echo "Usage: $0 -w dev_ws -t sskorol/ros2-humble-dev -b"
-    echo -e "\t-w Workspace folder name (relative to $HOME on host and /root in docker)"
+    echo "Usage: $0 -w dev_ws -i ros2-humble-fedora43 -b"
+    echo -e "\t-w Workspace folder name (relative to \$HOME on host and /root in container)"
     echo -e "\t-i Image to build/run"
     echo -e "\t-b Build mode"
     echo -e "\t-r Run mode"
     echo -e "\t-h Show help"
+    echo ""
+    echo "Fedora 43 optimized - uses Podman and Wayland by default"
     exit 1
 }
 
@@ -46,23 +48,37 @@ if [[ "$should_build" == false && "$should_run" == false ]] || [[ "$should_build
     help
 elif [[ "$should_run" == true ]]; then
     mkdir -p $HOME/$workspace
-    xhost +local:docker
-    docker run -it \
+
+    # Detect Wayland or X11 session
+    if [[ -n "$WAYLAND_DISPLAY" ]]; then
+        echo "Running with Wayland support on Fedora 43"
+        DISPLAY_SOCKET="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}"
+        DISPLAY_ENV="-e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=/tmp -e QT_QPA_PLATFORM=wayland -e GDK_BACKEND=wayland"
+        DISPLAY_VOLUME="-v ${DISPLAY_SOCKET}:/tmp/${WAYLAND_DISPLAY}:z"
+    else
+        echo "Running with X11 support (fallback)"
+        xhost +local: 2>/dev/null || true
+        DISPLAY_ENV="-e DISPLAY=$DISPLAY"
+        DISPLAY_VOLUME="-v /tmp/.X11-unix:/tmp/.X11-unix:z"
+    fi
+
+    podman run -it \
                --rm \
                --net=host \
                --privileged \
-               --gpus=all \
-               -e DISPLAY=$DISPLAY \
+               --security-opt label=disable \
+               ${DISPLAY_ENV} \
                -e PYTHONBUFFERED=1 \
-               -v /etc/timezone:/etc/timezone:ro \
-               -v /etc/localtime:/etc/localtime:ro \
-               -v $HOME/$workspace:/root/$workspace:rw \
-               -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-               -v $HOME/.Xauthority:/root/.Xauthority:ro \
-               -v $PWD/.session.yml:/root/.session.yml \
-               -v $PWD/.tmux.conf:/root/.tmux.conf \
-               --device=/dev/bus/usb:/dev/bus/usb \
+               -v /etc/timezone:/etc/timezone:ro,z \
+               -v /etc/localtime:/etc/localtime:ro,z \
+               -v $HOME/$workspace:/root/$workspace:z \
+               ${DISPLAY_VOLUME} \
+               -v $PWD/.session.yml:/root/.session.yml:z \
+               -v $PWD/.tmux.conf:/root/.tmux.conf:z \
+               --device /dev/dri \
+               --device /dev/bus/usb:/dev/bus/usb \
                $image
 elif [[ "$should_build" == true ]]; then
-   docker build --build-arg WORKSPACE=$workspace -t $image .
+   echo "Building image with Podman for Fedora 43..."
+   podman build --build-arg WORKSPACE=$workspace -t $image .
 fi
