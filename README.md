@@ -2,8 +2,6 @@
 
 This repo provides a template for a quick start with a ROS2 Humble development in Docker.
 
-<div><video src="https://user-images.githubusercontent.com/6638780/188269308-48c5b343-f268-408a-9d1a-435417dc9260.mp4"/></div>
-
 ### Setup
 
 ```shell
