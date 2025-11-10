@@ -62,6 +62,13 @@ elif [[ "$should_run" == true ]]; then
         DISPLAY_VOLUME="-v /tmp/.X11-unix:/tmp/.X11-unix:z"
     fi
 
+    # Timezone mount - Fedora only has /etc/localtime, not /etc/timezone
+    if [[ -f /etc/timezone ]]; then
+        TIMEZONE_VOLUME="-v /etc/timezone:/etc/timezone:ro,z"
+    else
+        TIMEZONE_VOLUME=""
+    fi
+
     podman run -it \
                --rm \
                --net=host \
@@ -69,7 +76,7 @@ elif [[ "$should_run" == true ]]; then
                --security-opt label=disable \
                ${DISPLAY_ENV} \
                -e PYTHONBUFFERED=1 \
-               -v /etc/timezone:/etc/timezone:ro,z \
+               ${TIMEZONE_VOLUME} \
                -v /etc/localtime:/etc/localtime:ro,z \
                -v $HOME/$workspace:/root/$workspace:z \
                ${DISPLAY_VOLUME} \
