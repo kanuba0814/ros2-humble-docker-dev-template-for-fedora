@@ -63,8 +63,9 @@ elif [[ "$should_run" == true ]]; then
     fi
 
     # Timezone mount - Fedora only has /etc/localtime, not /etc/timezone
+    # Note: /etc/localtime is mounted without :z label since it's a system file
     if [[ -f /etc/timezone ]]; then
-        TIMEZONE_VOLUME="-v /etc/timezone:/etc/timezone:ro,z"
+        TIMEZONE_VOLUME="-v /etc/timezone:/etc/timezone:ro"
     else
         TIMEZONE_VOLUME=""
     fi
@@ -77,7 +78,7 @@ elif [[ "$should_run" == true ]]; then
                ${DISPLAY_ENV} \
                -e PYTHONBUFFERED=1 \
                ${TIMEZONE_VOLUME} \
-               -v /etc/localtime:/etc/localtime:ro,z \
+               -v /etc/localtime:/etc/localtime:ro \
                -v $HOME/$workspace:/root/$workspace:z \
                ${DISPLAY_VOLUME} \
                -v $PWD/.session.yml:/root/.session.yml:z \
